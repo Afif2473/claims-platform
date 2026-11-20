@@ -1,3 +1,4 @@
+using Claims.Api.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Claims.Api.Controllers;
@@ -6,12 +7,22 @@ namespace Claims.Api.Controllers;
 [Route("api/[controller]")]
 public class HealthController : ControllerBase
 {
-    [HttpGet]
-    public IActionResult GetHealth()
+    private readonly ClaimsDbContext _dbContext;
+
+    public HealthController(ClaimsDbContext dbContext)
     {
+        _dbContext = dbContext;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetHealth()
+    {
+        var canConnect = await _dbContext.Database.CanConnectAsync();
+
         return Ok(new
         {
-            status = "Healthy",
+            status = canConnect ? "Healthy" : "Degraded",
+            database = canConnect ? "Connected" : "Disconnected",
             service = "Claims Management API",
             environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
             timestamp = DateTime.UtcNow

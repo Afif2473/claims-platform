@@ -1,7 +1,14 @@
+using Claims.Api.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Configure SQLite and Entity Framework Core
+builder.Services.AddDbContext<ClaimsDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("ClaimsDatabase")));
 
 // Configure OpenAPI (Swagger) services
 builder.Services.AddOpenApi();
