@@ -17,6 +17,7 @@ public class ClaimsDbContext : DbContext
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<ClaimActivity> ClaimActivities => Set<ClaimActivity>();
+    public DbSet<InformationRequest> InformationRequests => Set<InformationRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,11 +95,25 @@ public class ClaimsDbContext : DbContext
                 .HasMaxLength(50)
                 .IsRequired();
 
+            entity.Property(c => c.ReserveAmount)
+                .HasPrecision(18, 2);
+
+            entity.Property(c => c.ApprovedAmount)
+                .HasPrecision(18, 2);
+
+            entity.Property(c => c.DecisionReason)
+                .HasMaxLength(1000);
+
             entity.Property(c => c.CreatedAt)
                 .IsRequired();
 
             entity.Property(c => c.UpdatedAt)
                 .IsRequired();
+
+            // Optimistic concurrency: SQLite has no rowversion, so the service increments Version itself.
+            // No HasDefaultValue: the CLR default (0) is sent explicitly on insert.
+            entity.Property(c => c.Version)
+                .IsConcurrencyToken();
 
             // Indexes for fast querying
             entity.HasIndex(c => c.ClaimNumber)
@@ -168,6 +183,41 @@ public class ClaimsDbContext : DbContext
                 .HasForeignKey(a => a.ActorUserId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ==========================================
+        // InformationRequest Configuration
+        // ==========================================
+        modelBuilder.Entity<InformationRequest>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Question)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            entity.Property(r => r.Response)
+                .HasMaxLength(2000);
+
+            entity.Property(r => r.CreatedAt)
+                .IsRequired();
+
+            // IsAnswered is derived from RespondedAt, so it is not stored.
+            entity.Ignore(r => r.IsAnswered);
+
+            entity.HasIndex(r => r.ClaimId);
+
+            entity.HasOne(r => r.Claim)
+                .WithMany(c => c.InformationRequests)
+                .HasForeignKey(r => r.ClaimId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.RequestedBy)
+                .WithMany()
+                .HasForeignKey(r => r.RequestedByUserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

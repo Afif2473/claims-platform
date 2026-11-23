@@ -98,3 +98,32 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   4. *Git & Ignored Files*: Confirmed `claims.db` is ignored by Git and not staged.
   5. *Verification Results*: Migration `20261120085439_InitialCreate` recognized in `__EFMigrationsHistory`. Build succeeded with 0 warnings and 0 errors.
   6. *Live Smoke Test*: Started API, verified `GET /api/health` returned HTTP 200 with `"database": "Connected"` (confirming EF Core SQLite connectivity over HTTP), shut down cleanly, and verified database persistence and migration state.
+
+---
+
+## Entry 05 — Domain Extensions: Liability, Decisions & Information Requests (Task 05)
+- **Prompt**: Review progress against the brief and outline remaining work. Then extend the domain model so it can support liability exposure, decisions, the info-request flow and concurrency safety. Explain the plan before implementing.
+- **AI Proposal (accepted)**:
+  - `Claim`: `ReserveAmount`, `ApprovedAmount`, `DecisionReason`, `DecidedAt`, and an `int Version` concurrency token.
+  - New `InformationRequest` entity (separate table, encapsulated `Respond()` method, derived `IsAnswered`).
+  - `AppUser.IsActive` soft-delete flag, turning the 04A documentation note into code.
+  - Exposure formula: open claims only, `ApprovedAmount ?? ReserveAmount ?? ClaimedAmount`, aggregated **per currency** with no FX conversion.
+- **Design Decisions & Reasoning**:
+  1. *Three distinct amounts*: claimed (claimant), reserve (officer estimate), approved (committed). Exposure based only on `ClaimedAmount` would overstate liability, because claimants often over-claim.
+  2. *`int Version` over `[Timestamp] RowVersion`*: SQLite does not auto-generate rowversion values, so the service increments `Version` explicitly. A stale update throws `DbUpdateConcurrencyException`, which maps to HTTP 409.
+  3. *Info requests as their own table*: the audit log is append-only history, while an info request is a stateful work item. Both are kept, because creating or answering a request also appends an activity.
+  4. *No FX conversion*: summing across currencies without a rates source gives a misleading number. Per-currency totals are honest.
+- **Challenged / Corrected**:
+  1. *`HasDefaultValue(true)` on `IsActive`*: the first draft set a DB default. Caught on review: EF Core treats CLR `false` as "unset" for a property with a DB default, so it omits the column and an explicit `IsActive = false` would be silently stored as `true`. Removed the DB default; the C# initializer is the single source of truth. Also removed the redundant `HasDefaultValue(0)` on `Version`.
+- **Out of scope (deliberate)**: Policy entity and coverage validation, document uploads, decision history beyond the audit log.
+- **Verification**: `dotnet` was not on PATH in the AI's shell, so the developer ran the build and the migration manually (see docs/task-05-domain-extensions.md).
+
+---
+
+## Entry 05B — Repairing an Incomplete Task 05 (Model/Migration Drift)
+- **Prompt**: Read the assessment brief, review progress, update the roadmap, then continue step by step (no commits; developer reviews and commits).
+- **Finding**: The repo was inconsistent. The `AddLiabilityAndInformationRequests` migration and the updated model snapshot existed, and Entry 05 described the work as done. But `Claim.cs`, `AppUser.cs`, `ClaimsDbContext.cs`, `InformationRequest.cs` and `docs/task-05-domain-extensions.md` were missing or unchanged. The next `migrations add` would have generated a migration that **drops** the new columns.
+- **Action**: Rebuilt the model code from the snapshot, which records the agreed design, instead of regenerating the migration. This kept the reviewed migration (including the `IsActive` backfill comment) unchanged.
+- **Verification**: `dotnet-ef migrations has-pending-model-changes` reported "No changes have been made to the model since the last migration". Build: 0 warnings, 0 errors. Migration applied locally.
+- **Lesson**: Check what is actually in the files and use EF's drift check before trusting a journal entry, whether the AI or I wrote it.
+- **Also**: Added `docs/ROADMAP.md` with a requirement-to-step traceability table and the remaining steps (06–12).

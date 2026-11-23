@@ -36,6 +36,9 @@ namespace Claims.Api.Data.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -53,6 +56,10 @@ namespace Claims.Api.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("ApprovedAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("AssignedOfficerId")
@@ -83,6 +90,13 @@ namespace Claims.Api.Data.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -101,6 +115,10 @@ namespace Claims.Api.Data.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal?>("ReserveAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -108,6 +126,10 @@ namespace Claims.Api.Data.Migrations
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -163,6 +185,42 @@ namespace Claims.Api.Data.Migrations
                     b.ToTable("ClaimActivities");
                 });
 
+            modelBuilder.Entity("Claims.Api.Models.InformationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ClaimId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("RespondedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Response")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClaimId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.ToTable("InformationRequests");
+                });
+
             modelBuilder.Entity("Claims.Api.Models.Claim", b =>
                 {
                     b.HasOne("Claims.Api.Models.AppUser", "AssignedOfficer")
@@ -199,6 +257,25 @@ namespace Claims.Api.Data.Migrations
                     b.Navigation("Claim");
                 });
 
+            modelBuilder.Entity("Claims.Api.Models.InformationRequest", b =>
+                {
+                    b.HasOne("Claims.Api.Models.Claim", "Claim")
+                        .WithMany("InformationRequests")
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Claims.Api.Models.AppUser", "RequestedBy")
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Claim");
+
+                    b.Navigation("RequestedBy");
+                });
+
             modelBuilder.Entity("Claims.Api.Models.AppUser", b =>
                 {
                     b.Navigation("AssignedClaims");
@@ -209,6 +286,8 @@ namespace Claims.Api.Data.Migrations
             modelBuilder.Entity("Claims.Api.Models.Claim", b =>
                 {
                     b.Navigation("Activities");
+
+                    b.Navigation("InformationRequests");
                 });
 #pragma warning restore 612, 618
         }
