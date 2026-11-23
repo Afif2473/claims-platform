@@ -225,3 +225,35 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   - *Polling bug in the first draft*: one failed request would stop the notification stream for good (error reaching the outer `timer`). Moved `catchError` inside `switchMap`.
 - **Verified with a real browser, not just a build**: I asked for an actual UI run. WSL has no usable Chromium (missing system libs, no sudo), so the AI drove **Windows Chrome headless over the DevTools protocol from PowerShell** (script kept out of the repo). It clicked through the full lifecycle as three users, including a forced 409, with **0 JS errors**. The screenshots exposed three UX bugs a build could not: a self-contradicting 409 message, a 409 wiping the officer's typed reason, and a missing space. All fixed and re-verified.
 - **npm audit**: 16 moderate, all in Angular CLI dev tooling (`glob`/`minimatch`). 0 in runtime dependencies (`--omit=dev`). I did not run `audit fix --force` (breaking CLI downgrade or upgrade).
+
+---
+
+## Entry 12 — README & Wrap-up (Task 12)
+- **Prompt**: Write the root README for the hiring panel (how to run it, the architecture, the answers to the brief's questions, prioritisation, what was left out) and finalise the journal.
+- **Verification before writing**: I had the AI **clone the repository fresh** and build, test and run it exactly as committed, to prove "starts locally" doesn't depend on files on my machine. Result: 122 tracked files with no binaries, databases or secrets; 0 warnings; 57/57 tests; `npm ci` and `ng build` succeed; the API creates and seeds its database and connects to Kafka.
+- **Accepted**: the README answers each of the brief's "questions to consider" directly in one table, and every number in it (tests, seeded claims, markets) was taken from an actual run.
+
+---
+
+## Summary — How I Worked with the AI
+
+**Process.** One step at a time (ROADMAP.md). For each step the AI explained the plan, implemented only that scope, and ran the result. I reviewed and committed every step myself, and the AI never committed. Each step has a design note in `docs/`.
+
+**Rule I applied throughout: claims need evidence.** The cases where that changed the outcome:
+
+| Step | AI said / did | What checking showed | Outcome |
+| :--- | :--- | :--- | :--- |
+| 03 | "`ClaimActivity` is immutable" | Public setters | Private setters + constructor |
+| 05 | `HasDefaultValue(true)` on `IsActive` | EF would silently store `false` as `true` | DB default removed |
+| 05B | Journal said Task 05 was done | Model code was missing. The next migration would have dropped columns | Model rebuilt from the snapshot, checked with EF's drift check |
+| 06 | SQLite can't `ORDER BY DateTimeOffset` | Confirmed with a throwaway program | Kept the in-memory sort, trade-off documented |
+| 08 | SQLite can't `SUM` decimals | **False** on EF Core 10 | Reason dropped from code and docs |
+| 08 | Add a `createdAt` param to `ClaimActivity` for seeding | Would let any code backdate audit entries | Only the seeder backdates, via the change tracker |
+| 09 | Consumer logging | 174 warnings in 13s with the broker down | Transient errors moved to Debug |
+| 10 | "57 tests pass" | Passing first time proves little | Mutation check: 5 deliberate bugs, each caught |
+| 10 | EF InMemory for tests | Ignores concurrency tokens | Real SQLite in memory |
+| 11 | Floating `^` versions | Pulled a package 11 days old | Exact pins, at least 2 weeks old |
+| 11 | Incident date as noon UTC | Rejected as "future" in the morning in UTC+8 | Local start of day |
+| 11 | "Build passes" | Headless browser showed 3 UX bugs | Fixed and re-verified |
+
+**What I accepted largely as proposed:** the transition-table design, the error contract, the two-layer concurrency approach, the REST/Kafka split, and the dashboard shape. In each case I understood the trade-offs and can explain them.

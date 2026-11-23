@@ -34,7 +34,7 @@ A solid backend with a partial frontend beats a rushed attempt at both.
 | 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ✅ Done (see `docs/task-09-kafka-events.md`) |
 | 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ✅ Done, 57 tests (see `docs/task-10-tests.md`) |
 | 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ✅ Done (see `docs/task-11-angular-frontend.md`) |
-| 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ⏳ Next |
+| 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ✅ Done (see root `README.md`) |
 
 ## Key decisions (planned)
 
