@@ -1,0 +1,25 @@
+<header class="topbar">
+  <a routerLink="/" class="brand">Claims Platform</a>
+
+  @if (session.user(); as user) {
+    <nav>
+      <a routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        {{ session.isStaff() ? 'Queue' : 'My claims' }}
+      </a>
+      @if (session.isClaimant()) {
+        <a routerLink="/notifications" routerLinkActive="active">Updates</a>
+      }
+      @if (session.isStaff()) {
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      }
+    </nav>
+    <div class="who">
+      <span>{{ user.fullName }} <span class="muted">· {{ user.role }}</span></span>
+      <button type="button" (click)="signOut()">Switch user</button>
+    </div>
+  }
+</header>
+
+<main>
+  <router-outlet />
+</main>

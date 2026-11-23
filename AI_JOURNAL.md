@@ -209,3 +209,19 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   - *"57 passed on the first run" is not proof.* I asked for a mutation check: five deliberate bugs (concurrency token removed, illegal transition allowed, exposure formula broken, version check skipped, idempotency check dropped). Each one made the intended test fail, and every file was restored (`git diff` clean, 57/57 again).
 - **Learned from the mutation check**: with the handler's "already handled" check removed, the unique `EventId` index still blocked the duplicate. The consumer therefore has two layers of idempotency, and a concurrent duplicate recovers through the retry loop.
 - **Not covered (deliberate)**: HTTP-level tests via `WebApplicationFactory`, Kafka integration tests (verified manually in Task 09), frontend tests.
+
+---
+
+## Entry 11 — Angular Frontend (Task 11)
+- **Prompt**: Build one Angular app for both user types, in priority order: user picker → claimant (submit, my claims, detail, answer, updates) → officer (queue, claim actions) → dashboard. No UI library, minimal dependencies.
+- **Accepted**:
+  - Angular 21 with standalone components, signals and zoneless (the framework defaults). Small per-page state, so no store library.
+  - A dev-server proxy for `/api`, so the backend needs no CORS code.
+  - An `ApiService` that sends `claim.version` on every command (the frontend half of optimistic concurrency), and an interceptor that adds `X-User-Id`.
+  - Notifications are polled every 5s: the simplest honest way to show Kafka's eventual consistency in the UI.
+- **Challenged / overridden**:
+  - *Versions*: the CLI's `^` ranges pulled `@angular/build` 21.2.30 (11 days old). I pinned every Angular package to exact versions at least 2 weeks old, the same rule as the backend.
+  - *Timezone bug in the AI's first draft*: "noon UTC" for the incident date is in the future for a morning submission in UTC+8, so the API would 400 on a legitimate "today" claim. Replaced with local start of day. Verified with Node in the machine's timezone.
+  - *Polling bug in the first draft*: one failed request would stop the notification stream for good (error reaching the outer `timer`). Moved `catchError` inside `switchMap`.
+- **Verified with a real browser, not just a build**: I asked for an actual UI run. WSL has no usable Chromium (missing system libs, no sudo), so the AI drove **Windows Chrome headless over the DevTools protocol from PowerShell** (script kept out of the repo). It clicked through the full lifecycle as three users, including a forced 409, with **0 JS errors**. The screenshots exposed three UX bugs a build could not: a self-contradicting 409 message, a 409 wiping the officer's typed reason, and a missing space. All fixed and re-verified.
+- **npm audit**: 16 moderate, all in Angular CLI dev tooling (`glob`/`minimatch`). 0 in runtime dependencies (`--omit=dev`). I did not run `audit fix --force` (breaking CLI downgrade or upgrade).

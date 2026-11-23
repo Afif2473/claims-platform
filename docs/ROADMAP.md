@@ -33,8 +33,8 @@ A solid backend with a partial frontend beats a rushed attempt at both.
 | 08 | **Team dashboard**: open claims by status, workload per officer, performance (decided count, average days to decision), outstanding exposure per currency | ✅ Done (see `docs/task-08-team-dashboard.md`) |
 | 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ✅ Done (see `docs/task-09-kafka-events.md`) |
 | 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ✅ Done, 57 tests (see `docs/task-10-tests.md`) |
-| 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ⏳ Next |
-| 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ⬜ |
+| 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ✅ Done (see `docs/task-11-angular-frontend.md`) |
+| 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ⏳ Next |
 
 ## Key decisions (planned)
 
@@ -58,4 +58,4 @@ multi-service deployment, outbox pattern (noted as the production fix for publis
 
 - Docker Desktop WSL integration is enabled. Kafka runs with `docker compose up -d`.
   Without Docker, run with `Kafka__Enabled=false`.
-- Node 22 is installed. Angular CLI will be added through `npx` in Step 11.
+- Node 22 is installed. The frontend uses a project-local Angular CLI (`npm start` in `frontend/`).
