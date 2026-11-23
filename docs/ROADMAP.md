@@ -32,8 +32,8 @@ A solid backend with a partial frontend beats a rushed attempt at both.
 | 07 | **Claim workflow**: pick up, request info, respond, approve (with amount), reject, settle; one transition table that enforces the lifecycle; every change appends a `ClaimActivity` | ✅ Done (see `docs/task-07-claim-workflow.md`) |
 | 08 | **Team dashboard**: open claims by status, workload per officer, performance (decided count, average days to decision), outstanding exposure per currency | ✅ Done (see `docs/task-08-team-dashboard.md`) |
 | 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ✅ Done (see `docs/task-09-kafka-events.md`) |
-| 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ⏳ Next |
-| 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ⬜ |
+| 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ✅ Done, 57 tests (see `docs/task-10-tests.md`) |
+| 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ⏳ Next |
 | 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ⬜ |
 
 ## Key decisions (planned)

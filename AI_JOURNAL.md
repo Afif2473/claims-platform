@@ -195,3 +195,17 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   - With the broker down, the consumer logged **174 warnings in 13s** (librdkafka reports every reconnect attempt). I added `KafkaLogging`: transient errors go to Debug, and only "all brokers down" and fatal errors are visible. That brought it down to 3 meaningful lines.
 - **Known gap, accepted deliberately**: publish-after-commit is not atomic, so an event can be lost if the process dies after commit. The fix is the transactional outbox, documented and not built, to stay within the timebox.
 - **Verified against the real broker** (apache/kafka 3.9.0): lifecycle, 6 ordered events, 5 notifications, lag 0; a 409 publishes nothing; a replay with a new consumer group creates no duplicates; broker down still returns 201 in 0.02s; the disabled mode works.
+
+---
+
+## Entry 10 — Automated Tests (Task 10)
+- **Prompt**: Add an xUnit test project covering the business rules that matter most: lifecycle transitions, liability exposure, dashboard figures, concurrency, access rules and idempotent notifications.
+- **Accepted**:
+  - Two layers: fast pure-function tests (`ClaimWorkflow`, `LiabilityExposure`, `DashboardService.Build`, `ClaimNotificationHandler.BuildMessage`, `InformationRequest`), plus service tests through the real services.
+  - Service tests run on **real SQLite in memory**, built by running the real migrations, with a fresh `DbContext` per call to mimic separate requests.
+  - Hand-written fakes (`FixedCurrentUser`, `RecordingEventPublisher`) instead of adding a mocking library.
+- **Challenged**:
+  - *EF InMemory provider vs SQLite in memory*: InMemory is the usual quick choice, but it ignores concurrency tokens and foreign keys, so the most important test (concurrent write gives a conflict) would pass even when broken. I chose SQLite in memory.
+  - *"57 passed on the first run" is not proof.* I asked for a mutation check: five deliberate bugs (concurrency token removed, illegal transition allowed, exposure formula broken, version check skipped, idempotency check dropped). Each one made the intended test fail, and every file was restored (`git diff` clean, 57/57 again).
+- **Learned from the mutation check**: with the handler's "already handled" check removed, the unique `EventId` index still blocked the duplicate. The consumer therefore has two layers of idempotency, and a concurrent duplicate recovers through the retry loop.
+- **Not covered (deliberate)**: HTTP-level tests via `WebApplicationFactory`, Kafka integration tests (verified manually in Task 09), frontend tests.
