@@ -31,8 +31,8 @@ A solid backend with a partial frontend beats a rushed attempt at both.
 | 06 | **Claims API core**: DTOs and validation, `ClaimService`, submit / list / detail, seeded users, simulated identity (`X-User-Id`), error handling (ProblemDetails, 409 on concurrency conflict) | ✅ Done (see `docs/task-06-claims-api-core.md`) |
 | 07 | **Claim workflow**: pick up, request info, respond, approve (with amount), reject, settle; one transition table that enforces the lifecycle; every change appends a `ClaimActivity` | ✅ Done (see `docs/task-07-claim-workflow.md`) |
 | 08 | **Team dashboard**: open claims by status, workload per officer, performance (decided count, average days to decision), outstanding exposure per currency | ✅ Done (see `docs/task-08-team-dashboard.md`) |
-| 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ⏳ Next |
-| 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ⬜ |
+| 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ✅ Done (see `docs/task-09-kafka-events.md`) |
+| 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ⏳ Next |
 | 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ⬜ |
 | 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ⬜ |
 
@@ -56,6 +56,6 @@ multi-service deployment, outbox pattern (noted as the production fix for publis
 
 ## Environment notes
 
-- Docker is **not** available in this WSL distro yet. To run Kafka, enable WSL integration in Docker
-  Desktop. Until then, run with `Kafka:Enabled=false`.
+- Docker Desktop WSL integration is enabled. Kafka runs with `docker compose up -d`.
+  Without Docker, run with `Kafka__Enabled=false`.
 - Node 22 is installed. Angular CLI will be added through `npx` in Step 11.

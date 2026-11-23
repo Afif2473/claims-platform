@@ -18,6 +18,7 @@ public class ClaimsDbContext : DbContext
     public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<ClaimActivity> ClaimActivities => Set<ClaimActivity>();
     public DbSet<InformationRequest> InformationRequests => Set<InformationRequest>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -216,6 +217,39 @@ public class ClaimsDbContext : DbContext
             entity.HasOne(r => r.RequestedBy)
                 .WithMany()
                 .HasForeignKey(r => r.RequestedByUserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ==========================================
+        // Notification Configuration
+        // ==========================================
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+
+            entity.Property(n => n.Message)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(n => n.CreatedAt)
+                .IsRequired();
+
+            // Idempotency guard: one notification per claim event, even if Kafka redelivers.
+            entity.HasIndex(n => n.EventId)
+                .IsUnique();
+
+            entity.HasIndex(n => n.UserId);
+
+            entity.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(n => n.Claim)
+                .WithMany()
+                .HasForeignKey(n => n.ClaimId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
         });

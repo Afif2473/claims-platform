@@ -4,6 +4,7 @@ using Claims.Api.DTOs;
 using Claims.Api.Enums;
 using Claims.Api.Errors;
 using Claims.Api.Interfaces;
+using Claims.Api.Messaging;
 using Claims.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,12 +21,17 @@ public class ClaimWorkflowService : IClaimWorkflowService
     private readonly ClaimsDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly IClaimService _claims;
+    private readonly IClaimEventPublisher _events;
 
-    public ClaimWorkflowService(ClaimsDbContext db, ICurrentUserService currentUser, IClaimService claims)
+    // Events for the activities recorded in this request; published after the commit.
+    private readonly List<ClaimActivity> _recorded = [];
+
+    public ClaimWorkflowService(ClaimsDbContext db, ICurrentUserService currentUser, IClaimService claims, IClaimEventPublisher events)
     {
         _db = db;
         _currentUser = currentUser;
         _claims = claims;
+        _events = events;
     }
 
     public async Task<ClaimDetailResponse> PickUpAsync(Guid claimId, PickUpClaimRequest request, CancellationToken cancellationToken = default)
@@ -191,15 +197,28 @@ public class ClaimWorkflowService : IClaimWorkflowService
         claim.Status = target;
     }
 
-    private void Record(Claim claim, ClaimActivityType type, string description, Guid actorUserId) =>
-        _db.ClaimActivities.Add(new ClaimActivity(claim.Id, type, description, actorUserId));
+    private void Record(Claim claim, ClaimActivityType type, string description, Guid actorUserId)
+    {
+        var activity = new ClaimActivity(claim.Id, type, description, actorUserId);
+        _db.ClaimActivities.Add(activity);
+        _recorded.Add(activity);
+    }
 
-    /// <summary>The change, its audit entry and any information request are committed in one transaction.</summary>
+    /// <summary>
+    /// The change, its audit entry and any information request are committed in one transaction.
+    /// Only after the commit succeeds is one event per audit entry published to Kafka.
+    /// If the save throws (e.g. a 409 concurrency conflict), nothing is published.
+    /// </summary>
     private async Task<ClaimDetailResponse> SaveAsync(Claim claim, CancellationToken cancellationToken)
     {
         claim.Version++;
         claim.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
+
+        foreach (var activity in _recorded)
+            _events.Publish(ClaimEvent.From(claim, activity));
+        _recorded.Clear();
+
         return await _claims.GetAsync(claim.Id, cancellationToken);
     }
 

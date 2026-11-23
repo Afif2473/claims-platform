@@ -3,6 +3,7 @@ using Claims.Api.DTOs;
 using Claims.Api.Enums;
 using Claims.Api.Errors;
 using Claims.Api.Interfaces;
+using Claims.Api.Messaging;
 using Claims.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,11 +13,13 @@ public class ClaimService : IClaimService
 {
     private readonly ClaimsDbContext _db;
     private readonly ICurrentUserService _currentUser;
+    private readonly IClaimEventPublisher _events;
 
-    public ClaimService(ClaimsDbContext db, ICurrentUserService currentUser)
+    public ClaimService(ClaimsDbContext db, ICurrentUserService currentUser, IClaimEventPublisher events)
     {
         _db = db;
         _currentUser = currentUser;
+        _events = events;
     }
 
     public async Task<ClaimDetailResponse> SubmitAsync(SubmitClaimRequest request, CancellationToken cancellationToken = default)
@@ -46,11 +49,15 @@ public class ClaimService : IClaimService
         };
 
         // The claim and its first audit entry are saved in one SaveChanges, so in one transaction.
-        claim.Activities.Add(new ClaimActivity(
-            claim.Id, ClaimActivityType.ClaimSubmitted, $"Claim submitted by {user.FullName}.", user.Id));
+        var activity = new ClaimActivity(
+            claim.Id, ClaimActivityType.ClaimSubmitted, $"Claim submitted by {user.FullName}.", user.Id);
+        claim.Activities.Add(activity);
 
         _db.Claims.Add(claim);
         await _db.SaveChangesAsync(cancellationToken);
+
+        // Published only after the commit succeeded, so consumers never see a claim that does not exist.
+        _events.Publish(ClaimEvent.From(claim, activity));
 
         return await GetAsync(claim.Id, cancellationToken);
     }

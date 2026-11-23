@@ -83,6 +83,10 @@ X-User-Id: {{sarah}}
 GET {{host}}/api/dashboard
 X-User-Id: {{jane}}
 
+### Jane's notifications (created asynchronously from Kafka claim-events)
+GET {{host}}/api/notifications
+X-User-Id: {{jane}}
+
 #######################################################################
 ### WORKFLOW — run top to bottom. Set @claimId from the submit response,
 ### Each step shows the version it expects (it goes up by 1 per successful action).

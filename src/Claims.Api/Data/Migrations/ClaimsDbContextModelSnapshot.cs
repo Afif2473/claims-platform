@@ -221,6 +221,41 @@ namespace Claims.Api.Data.Migrations
                     b.ToTable("InformationRequests");
                 });
 
+            modelBuilder.Entity("Claims.Api.Models.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ClaimId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClaimId");
+
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Claims.Api.Models.Claim", b =>
                 {
                     b.HasOne("Claims.Api.Models.AppUser", "AssignedOfficer")
@@ -274,6 +309,25 @@ namespace Claims.Api.Data.Migrations
                     b.Navigation("Claim");
 
                     b.Navigation("RequestedBy");
+                });
+
+            modelBuilder.Entity("Claims.Api.Models.Notification", b =>
+                {
+                    b.HasOne("Claims.Api.Models.Claim", "Claim")
+                        .WithMany()
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Claims.Api.Models.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Claim");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Claims.Api.Models.AppUser", b =>

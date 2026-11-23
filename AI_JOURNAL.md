@@ -177,3 +177,21 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   - The AI's first justification for in-memory aggregation was "SQLite can't SUM decimals". I asked it to verify, as in Step 06. On EF Core 10.0.15 `SUM(decimal)` **works**, so that reason was dropped. The remaining reasons are testability and `DateTimeOffset` arithmetic, plus a documented scale trade-off.
   - Backdating seed activities: adding a `createdAt` parameter to the `ClaimActivity` constructor would have let any code backdate audit entries. Instead, only the seeder sets `CreatedAt` explicitly through EF's change tracker, and the domain constructor stays strict.
 - **Verified**: Expected dashboard numbers were worked out by hand from the seed data before running. Every figure matched. I then settled a seeded claim with its seeded `version` (proving the seed versions are consistent with the workflow) and saw it drop out of exposure.
+
+---
+
+## Entry 09 — Kafka Claim Events & Notifications (Task 09)
+- **Prompt**: Add Kafka with a defensible REST/Kafka split. Publish claim events after state changes, consume them into claimant notifications, provide `docker-compose.yml`, and keep the app runnable without Docker.
+- **Decision (REST vs Kafka)**: REST for everything the user waits on (commands with validation and 409s, and all reads). Kafka for "something happened to a claim" side effects. The first consumer is claimant notifications (the brief's "receive decisions"). The frontend never talks to Kafka directly.
+- **Accepted**:
+  - One event per `ClaimActivity`, with `eventId` = activity id, so every event traces to exactly one audit record and doubles as an idempotency key.
+  - Message key = claimId, for per-claim ordering.
+  - Publish only after the commit, through a non-blocking producer (`Produce` + delivery callback, 10s timeout), so Kafka problems never fail or slow a user request.
+  - At-least-once consumer (manual commit after the DB write) plus a unique `EventId` index, giving an idempotent effect.
+  - `Kafka:Enabled` switch with a no-op publisher.
+- **Challenged / corrected**:
+  - The first run failed with `PendingModelChangesWarning`. I had run a DLL built before the migration was generated. The fix was to rebuild. EF's guard worked as intended, so it was not suppressed.
+  - "Created Kafka topic" was missing from the logs. Cause: my own earlier test ran `kafka-console-consumer` against the topic, and the broker auto-created it with **1 partition**. I deleted the topic and re-ran to prove the app creates it with 3.
+  - With the broker down, the consumer logged **174 warnings in 13s** (librdkafka reports every reconnect attempt). I added `KafkaLogging`: transient errors go to Debug, and only "all brokers down" and fatal errors are visible. That brought it down to 3 meaningful lines.
+- **Known gap, accepted deliberately**: publish-after-commit is not atomic, so an event can be lost if the process dies after commit. The fix is the transactional outbox, documented and not built, to stay within the timebox.
+- **Verified against the real broker** (apache/kafka 3.9.0): lifecycle, 6 ordered events, 5 notifications, lag 0; a 409 publishes nothing; a replay with a new consumer group creates no duplicates; broker down still returns 201 in 0.02s; the disabled mode works.

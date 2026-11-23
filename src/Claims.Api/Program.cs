@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Claims.Api.Data;
 using Claims.Api.Errors;
 using Claims.Api.Interfaces;
+using Claims.Api.Messaging;
 using Claims.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
@@ -22,6 +23,20 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IClaimService, ClaimService>();
 builder.Services.AddScoped<IClaimWorkflowService, ClaimWorkflowService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+// Kafka: claim events are published after each committed change and consumed into claimant notifications.
+// Set Kafka:Enabled=false (or env Kafka__Enabled=false) to run without a broker.
+builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection(KafkaOptions.SectionName));
+builder.Services.AddScoped<ClaimNotificationHandler>();
+if (builder.Configuration.GetValue(KafkaOptions.SectionName + ":Enabled", true))
+{
+    builder.Services.AddSingleton<IClaimEventPublisher, KafkaClaimEventPublisher>();
+    builder.Services.AddHostedService<ClaimEventConsumer>();
+}
+else
+{
+    builder.Services.AddSingleton<IClaimEventPublisher, NoOpClaimEventPublisher>();
+}
 
 // Consistent RFC 7807 error responses
 builder.Services.AddProblemDetails();

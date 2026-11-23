@@ -1,0 +1,10 @@
+# Local Kafka for the claims platform: a single broker in KRaft mode (no ZooKeeper).
+# The official image's defaults expose a ready-to-use broker on localhost:9092.
+# Start:  docker compose up -d
+# Stop:   docker compose down
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: claims-kafka
+    ports:
+      - "9092:9092"
