@@ -74,3 +74,74 @@ X-User-Id: {{david}}
 
 ### No header -> 401
 GET {{host}}/api/claims
+
+#######################################################################
+### WORKFLOW — run top to bottom. Set @claimId from the submit response,
+### Each step shows the version it expects (it goes up by 1 per successful action).
+#######################################################################
+@claimId = 00000000-0000-0000-0000-000000000000
+@requestId = 00000000-0000-0000-0000-000000000000
+@mei = 20000000-0000-0000-0000-000000000002
+
+### 1. David picks up (version 0) -> UnderReview
+POST {{host}}/api/claims/{{claimId}}/pick-up
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 0 }
+
+### 1b. Mei tries with the same stale version -> 409
+POST {{host}}/api/claims/{{claimId}}/pick-up
+X-User-Id: {{mei}}
+Content-Type: application/json
+
+{ "version": 0 }
+
+### 2. David sets reserve (version 1)
+PUT {{host}}/api/claims/{{claimId}}/reserve
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 1, "amount": 4000 }
+
+### 3. David requests information (version 2) -> AdditionalInformationRequired
+POST {{host}}/api/claims/{{claimId}}/information-requests
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 2, "question": "Please provide the police report number." }
+
+### 4. Jane responds (version 3) -> UnderReview. Set @requestId from informationRequests[0].id
+POST {{host}}/api/claims/{{claimId}}/information-requests/{{requestId}}/response
+X-User-Id: {{jane}}
+Content-Type: application/json
+
+{ "version": 3, "response": "Police report SG-12345." }
+
+### 5a. Approve more than claimed -> 409
+POST {{host}}/api/claims/{{claimId}}/approve
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 4, "approvedAmount": 999999, "reason": "Too generous" }
+
+### 5. David approves (version 4) -> Approved
+POST {{host}}/api/claims/{{claimId}}/approve
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 4, "approvedAmount": 4200, "reason": "Covered under policy; excess deducted." }
+
+### 6. David settles (version 5) -> Settled
+POST {{host}}/api/claims/{{claimId}}/settle
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 5 }
+
+### Alternative: reject (from UnderReview or AdditionalInformationRequired)
+POST {{host}}/api/claims/{{claimId}}/reject
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{ "version": 4, "reason": "Incident falls under a policy exclusion." }

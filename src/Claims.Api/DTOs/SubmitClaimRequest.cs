@@ -39,8 +39,7 @@ public class SubmitClaimRequest : IValidatableObject
         if (IncidentDate > DateTimeOffset.UtcNow)
             yield return new ValidationResult("Incident date cannot be in the future.", [nameof(IncidentDate)]);
 
-        // SQLite does not enforce decimal scale, so money precision is enforced here.
-        if (decimal.Round(ClaimedAmount, 2) != ClaimedAmount)
-            yield return new ValidationResult("Claimed amount can have at most 2 decimal places.", [nameof(ClaimedAmount)]);
+        foreach (var error in MoneyValidation.Validate(ClaimedAmount, nameof(ClaimedAmount)))
+            yield return error;
     }
 }

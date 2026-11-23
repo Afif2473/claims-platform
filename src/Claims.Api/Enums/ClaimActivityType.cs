@@ -21,6 +21,11 @@ public enum ClaimActivityType
     StatusChanged,
 
     /// <summary>
+    /// Claims officer set or revised the reserve (estimated cost) on the claim.
+    /// </summary>
+    ReserveSet,
+
+    /// <summary>
     /// Claims officer requested additional information from claimant.
     /// </summary>
     InformationRequested,

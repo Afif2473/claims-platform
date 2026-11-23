@@ -14,3 +14,6 @@ public class NotFoundException(string message) : Exception(message);
 
 /// <summary>409 — the request is well-formed but conflicts with the claim's current state.</summary>
 public class BusinessRuleException(string message) : Exception(message);
+
+/// <summary>409 — the client acted on a stale Version of the claim.</summary>
+public class ConcurrencyConflictException(string message) : Exception(message);

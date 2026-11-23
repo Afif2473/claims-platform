@@ -27,7 +27,9 @@ public sealed class ApiExceptionHandler : IExceptionHandler
             ForbiddenException e => (StatusCodes.Status403Forbidden, "Forbidden", e.Message),
             NotFoundException e => (StatusCodes.Status404NotFound, "Not found", e.Message),
             BusinessRuleException e => (StatusCodes.Status409Conflict, "Business rule violation", e.Message),
-            DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrency conflict",
+            ConcurrencyConflictException e => (StatusCodes.Status409Conflict, "Concurrency conflict", e.Message),
+            // Raised by EF when another request saved between our read and our write.
+            DbUpdateConcurrencyException =>(StatusCodes.Status409Conflict, "Concurrency conflict",
                 "The claim was changed by someone else. Reload it and try again."),
             // Never leak internal exception messages to the client.
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error", "An unexpected error occurred.")

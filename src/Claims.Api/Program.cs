@@ -20,6 +20,7 @@ builder.Services.AddDbContext<ClaimsDbContext>(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IClaimService, ClaimService>();
+builder.Services.AddScoped<IClaimWorkflowService, ClaimWorkflowService>();
 
 // Consistent RFC 7807 error responses
 builder.Services.AddProblemDetails();

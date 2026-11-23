@@ -144,3 +144,21 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   - The first smoke test returned 404 for every route. The cause was an older API instance from my manual testing still holding port 5129, not a routing bug. Reran on port 5199 against a scratch database.
   - The first "403 for officer submit" test actually returned 400 because the test payload was invalid (`"KL"` is below the 3-character minimum). Fixed the test, not the code.
   - Noted a framework detail: `IValidatableObject.Validate` only runs after attribute validation passes, so cross-field errors don't appear alongside missing-field errors. This is standard ASP.NET behaviour and accepted.
+
+---
+
+## Entry 07 — Claim Workflow (Task 07)
+- **Prompt**: Implement the claim lifecycle: pick up, reserve, request info, respond, approve, reject, settle. Use one transition table, optimistic concurrency via `Version`, and an audit entry for every action.
+- **Accepted**:
+  - `ClaimWorkflow` holds the transition table as data, and every action goes through `MoveTo()`. It is easy to read, easy to test (Step 10), and no action can skip it.
+  - A fixed check order in every action (validation → role → exists → assigned → version → transition → rule), so the same mistake always gives the same status code.
+  - Two-layer concurrency: an explicit `version` from the client catches a stale screen, and EF's `WHERE Version = @loaded` catches simultaneous requests.
+  - Workflow actions live in a separate `ClaimWorkflowService`, which keeps `ClaimService` to submit and queries.
+- **Decided / scoped down**:
+  - Managers are read-only. Reassignment was left out to stay inside the timebox.
+  - Only one open information request at a time, enforced by the transition table rather than an extra rule.
+  - The question text and decision reason are not copied into activity descriptions. They live on their own records and would break the 1000-character activity limit.
+- **Verified**:
+  - I asked for a *real* race test, not just a stale-version test. Two parallel pick-up requests, 3 runs: one 200 and one 409 every time, and exactly 2 activities, which proves no duplicate audit entry gets through.
+  - 22 scripted lifecycle scenarios (illegal transitions, wrong actor, wrong claimant, double answer, amount rules). All returned the expected codes, and the server log shows 0 unhandled errors.
+  - EF drift check after adding the `ReserveSet` enum value: no migration needed (string conversion).
