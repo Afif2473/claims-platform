@@ -127,3 +127,20 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
 - **Verification**: `dotnet-ef migrations has-pending-model-changes` reported "No changes have been made to the model since the last migration". Build: 0 warnings, 0 errors. Migration applied locally.
 - **Lesson**: Check what is actually in the files and use EF's drift check before trusting a journal entry, whether the AI or I wrote it.
 - **Also**: Added `docs/ROADMAP.md` with a requirement-to-step traceability table and the remaining steps (06–12).
+
+---
+
+## Entry 06 — Claims API Core (Task 06)
+- **Prompt**: Build the first API slice: submit, list and view claims, with validation, simulated identity, seeded users and a consistent error contract. Workflow actions are deferred to Step 07.
+- **Accepted**:
+  - `ICurrentUserService` reads an `X-User-Id` header (seeded users with fixed ids). Real auth is out of scope for the timebox. The interface keeps the switch to JWT down to one class.
+  - Domain exceptions (`NotFound`, `Forbidden`, `Unauthenticated`, `BusinessRule`) are mapped to ProblemDetails by an `IExceptionHandler`. `DbUpdateConcurrencyException` maps to 409. A 500 never returns exception text.
+  - A claimant asking for another claimant's claim gets 404, not 403, so claim ids can't be probed.
+  - Migrate and seed on startup so the app runs locally with a single command.
+- **Changed from the earlier plan**:
+  - *Currency derived from market* instead of the Task 03 doc's "validate the submitted ISO currency". Taking both from the client creates a consistency problem that a lookup avoids entirely.
+- **Verified instead of trusting the AI**:
+  - The AI claimed EF Core's SQLite provider cannot `ORDER BY` a `DateTimeOffset`, and used that to justify sorting in memory. I asked for proof: a throwaway console app on EF Core 10.0.15 threw `NotSupportedException`. Kept the in-memory sort, with the trade-off documented (no paging).
+  - The first smoke test returned 404 for every route. The cause was an older API instance from my manual testing still holding port 5129, not a routing bug. Reran on port 5199 against a scratch database.
+  - The first "403 for officer submit" test actually returned 400 because the test payload was invalid (`"KL"` is below the 3-character minimum). Fixed the test, not the code.
+  - Noted a framework detail: `IValidatableObject.Validate` only runs after attribute validation passes, so cross-field errors don't appear alongside missing-field errors. This is standard ASP.NET behaviour and accepted.

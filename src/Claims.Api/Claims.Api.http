@@ -1,6 +1,76 @@
-@Claims.Api_HostAddress = http://localhost:5129
+@host = http://localhost:5129
+@jane = 10000000-0000-0000-0000-000000000001
+@arjun = 10000000-0000-0000-0000-000000000002
+@david = 20000000-0000-0000-0000-000000000001
+@sarah = 30000000-0000-0000-0000-000000000001
 
-GET {{Claims.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health
+GET {{host}}/api/health
 
-###
+### Seeded demo users (no header needed)
+GET {{host}}/api/users
+
+### Who am I
+GET {{host}}/api/users/me
+X-User-Id: {{jane}}
+
+### Claimant submits a claim -> 201
+POST {{host}}/api/claims
+X-User-Id: {{jane}}
+Content-Type: application/json
+
+{
+  "claimType": "Motor",
+  "description": "Rear-ended while stopped at a traffic light.",
+  "incidentLocation": "Orchard Road, Singapore",
+  "incidentDate": "2026-11-20T09:30:00+08:00",
+  "claimedAmount": 4500.50,
+  "marketCode": "SG"
+}
+
+### Invalid payload -> 400 with field errors
+POST {{host}}/api/claims
+X-User-Id: {{jane}}
+Content-Type: application/json
+
+{
+  "claimType": "Property",
+  "description": "Pipe burst in kitchen.",
+  "incidentLocation": "Kuala Lumpur",
+  "incidentDate": "2099-01-01T00:00:00Z",
+  "claimedAmount": 1.234,
+  "marketCode": "US"
+}
+
+### Officer tries to submit -> 403
+POST {{host}}/api/claims
+X-User-Id: {{david}}
+Content-Type: application/json
+
+{
+  "claimType": "Property",
+  "description": "Pipe burst in kitchen.",
+  "incidentLocation": "Kuala Lumpur",
+  "incidentDate": "2026-11-01T00:00:00Z",
+  "claimedAmount": 100,
+  "marketCode": "MY"
+}
+
+### Claimant's own claims (newest first)
+GET {{host}}/api/claims
+X-User-Id: {{jane}}
+
+### Another claimant sees none of Jane's claims
+GET {{host}}/api/claims
+X-User-Id: {{arjun}}
+
+### Officer work queue: unassigned, submitted, Singapore (oldest first)
+GET {{host}}/api/claims?assignment=Unassigned&status=Submitted&marketCode=SG
+X-User-Id: {{david}}
+
+### Claim detail (replace the id with one returned above)
+GET {{host}}/api/claims/00000000-0000-0000-0000-000000000000
+X-User-Id: {{david}}
+
+### No header -> 401
+GET {{host}}/api/claims
