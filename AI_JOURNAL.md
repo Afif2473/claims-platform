@@ -162,3 +162,18 @@ This journal logs the prompts, design discussions, AI suggestions accepted, chal
   - I asked for a *real* race test, not just a stale-version test. Two parallel pick-up requests, 3 runs: one 200 and one 409 every time, and exactly 2 activities, which proves no duplicate audit entry gets through.
   - 22 scripted lifecycle scenarios (illegal transitions, wrong actor, wrong claimant, double answer, amount rules). All returned the expected codes, and the server log shows 0 unhandled errors.
   - EF drift check after adding the `ReserveSet` enum value: no migration needed (string conversion).
+
+---
+
+## Entry 08 — Team Dashboard & Liability Exposure (Task 08)
+- **Prompt**: Build the staff dashboard: claims by status, the unassigned queue, per-officer workload and performance, and outstanding liability exposure.
+- **Accepted**:
+  - A single `GET /api/dashboard` for officers and managers (claimants get 403). The brief gives workload visibility to claims staff, not only managers.
+  - The exposure formula is in `LiabilityExposure.For(claim)` and reuses `ClaimWorkflow.OpenStatuses`, so "open" has a single definition.
+  - Exposure is grouped per market and currency, with `totalClaimed` beside it and `unreservedClaims` showing how much of the figure is still the claimant's own number.
+  - Aggregation is in a pure `DashboardService.Build(...)`, which makes it unit-testable without a database.
+  - Demo claims are seeded in every status so the dashboard isn't empty on first run.
+- **Challenged / corrected**:
+  - The AI's first justification for in-memory aggregation was "SQLite can't SUM decimals". I asked it to verify, as in Step 06. On EF Core 10.0.15 `SUM(decimal)` **works**, so that reason was dropped. The remaining reasons are testability and `DateTimeOffset` arithmetic, plus a documented scale trade-off.
+  - Backdating seed activities: adding a `createdAt` parameter to the `ClaimActivity` constructor would have let any code backdate audit entries. Instead, only the seeder sets `CreatedAt` explicitly through EF's change tracker, and the domain constructor stays strict.
+- **Verified**: Expected dashboard numbers were worked out by hand from the seed data before running. Every figure matched. I then settled a seeded claim with its seeded `version` (proving the seed versions are consistent with the workflow) and saw it drop out of exposure.

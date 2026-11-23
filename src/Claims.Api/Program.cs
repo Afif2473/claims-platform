@@ -21,6 +21,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IClaimService, ClaimService>();
 builder.Services.AddScoped<IClaimWorkflowService, ClaimWorkflowService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Consistent RFC 7807 error responses
 builder.Services.AddProblemDetails();

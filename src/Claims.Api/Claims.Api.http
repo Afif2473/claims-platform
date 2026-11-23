@@ -75,6 +75,14 @@ X-User-Id: {{david}}
 ### No header -> 401
 GET {{host}}/api/claims
 
+### Team dashboard (officer or manager) -> 200
+GET {{host}}/api/dashboard
+X-User-Id: {{sarah}}
+
+### Dashboard as claimant -> 403
+GET {{host}}/api/dashboard
+X-User-Id: {{jane}}
+
 #######################################################################
 ### WORKFLOW — run top to bottom. Set @claimId from the submit response,
 ### Each step shows the version it expects (it goes up by 1 per successful action).

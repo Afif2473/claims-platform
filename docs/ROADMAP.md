@@ -30,8 +30,8 @@ A solid backend with a partial frontend beats a rushed attempt at both.
 | 05 | Reserve/approved amounts, decisions, `InformationRequest`, `Version` concurrency, `IsActive` | ✅ Done (model code restored to match the migration, see journal 05B) |
 | 06 | **Claims API core**: DTOs and validation, `ClaimService`, submit / list / detail, seeded users, simulated identity (`X-User-Id`), error handling (ProblemDetails, 409 on concurrency conflict) | ✅ Done (see `docs/task-06-claims-api-core.md`) |
 | 07 | **Claim workflow**: pick up, request info, respond, approve (with amount), reject, settle; one transition table that enforces the lifecycle; every change appends a `ClaimActivity` | ✅ Done (see `docs/task-07-claim-workflow.md`) |
-| 08 | **Team dashboard**: open claims by status, workload per officer, performance (decided count, average days to decision), outstanding exposure per currency | ⏳ Next |
-| 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ⬜ |
+| 08 | **Team dashboard**: open claims by status, workload per officer, performance (decided count, average days to decision), outstanding exposure per currency | ✅ Done (see `docs/task-08-team-dashboard.md`) |
+| 09 | **Kafka**: publish `claim-events` after state changes, consume to create claimant notifications; `docker-compose.yml`; `Kafka:Enabled` switch so the app still runs without Docker | ⏳ Next |
 | 10 | **Tests**: xUnit on the transition rules and the exposure calculation | ⬜ |
 | 11 | **Angular frontend (partial)**: user switcher, claimant screens (submit, my claims, detail, respond), officer screens (queue, claim actions, dashboard) | ⬜ |
 | 12 | **README and wrap-up**: run instructions, architecture and REST/Kafka rationale, what was left out and why, journal finalised | ⬜ |
